@@ -5,9 +5,10 @@ Example code of "[game of life](https://en.wikipedia.org/wiki/Conway's_Game_of_L
 Each implementation has the same file API
 
 Input is two command line arguments separated by a space
+
 1. Number of generations to run
-2. Text file that represents the initial grid
-3. Output file name of GIF animation
+1. Text file that represents the initial grid
+1. Output file name of GIF animation
 
 The text file is formatted as [RLE](http://conwaylife.com/wiki/Rle)
 
