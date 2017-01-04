@@ -4,7 +4,7 @@ Example code of "[game of life](https://en.wikipedia.org/wiki/Conway's_Game_of_L
 
 Each implementation has the same file API
 
-Input is two command line arguments separated by a space
+Input are three command line arguments separated by a space
 
 1. Number of generations to run
 1. Text file that represents the initial grid
