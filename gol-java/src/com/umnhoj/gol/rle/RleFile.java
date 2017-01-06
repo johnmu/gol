@@ -1,6 +1,14 @@
 package com.umnhoj.gol.rle;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.stream.Stream;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.mutable.MutableInt;
 
 /**
  * Defined at http://conwaylife.com/wiki/Run_Length_Encoded
@@ -65,9 +73,106 @@ public class RleFile {
 	}
 
 	public RleFile(final int width, final int height, final ArrayList<Cell> cells) {
-		super();
 		this.width = width;
 		this.height = height;
 		this.cells = cells;
+	}
+
+	public static RleFile parse(final Path path) throws IOException {
+		// Sigh.. this may be improved
+		final MutableInt _height = new MutableInt();
+		final MutableInt _width = new MutableInt();
+		final StringBuffer rleLine = new StringBuffer();
+		try (Stream<String> lines = Files.lines(path, Charset.defaultCharset())) {
+			lines.map(String::trim).forEachOrdered(line -> {
+				if (line.isEmpty()) {
+					// ignore blank lines
+					return;
+				}
+				final char start = Character.toLowerCase(line.charAt(0));
+				if (start == '#' && line.length() > 1) {
+					final char second = Character.toUpperCase(line.charAt(1));
+					switch (second) {
+					case 'C':
+					case 'N':
+					case 'O':
+					case 'P':
+					case 'R':
+					default:
+						// do nothing for now
+					}
+				} else if (Character.isDigit(start) || start == 'b' || start == 'o') {
+					rleLine.append(line);
+				} else if (start == 'x') {
+					final String[] tokens = StringUtils.split(line, ',');
+					for (final String token : tokens) {
+						final String[] split = StringUtils.split(token, '=');
+						if (split.length != 2) {
+							throw new RuntimeException("Bad dimention line in RLE file: " + line);
+						}
+						switch (split[0].trim()) {
+						case "x":
+							_width.setValue(Integer.parseInt(split[1].trim()));
+						case "y":
+							_height.setValue(Integer.parseInt(split[1].trim()));
+						default:
+						}
+					}
+				} else {
+					throw new RuntimeException("Bad line in RLE file: " + line);
+				}
+			});
+		}
+
+		return new RleFile(_width.toInteger(), _height.toInteger(), parseCells(rleLine));
+	}
+
+	/**
+	 * Parse RLE string into cells
+	 */
+	protected static ArrayList<Cell> parseCells(final StringBuffer rleLine) {
+		final ArrayList<Cell> _cells = new ArrayList<>();
+
+		// Parse the RLE into cells
+		int currY = 0;
+		int currX = 0;
+		final StringBuffer currCount = new StringBuffer();
+		for (char c : rleLine.toString().toCharArray()) {
+			switch (Character.toLowerCase(c)) {
+			case 'b': {
+				final int count = parseLength(currCount);
+				currX += count;
+				currCount.setLength(0);
+			}
+			case 'o': {
+				final int count = parseLength(currCount);
+				for (int i = 0; i < count; i++) {
+					_cells.add(new Cell(currX, currY));
+					currX++;
+				}
+				currCount.setLength(0);
+			}
+			case '$': {
+				currX = 0;
+				currY++;
+			}
+			case '!':
+				break;
+			default:
+				if (Character.isDigit(c)) {
+					currCount.append(c);
+				} else {
+					throw new RuntimeException("Bad RLE string in file: " + rleLine);
+				}
+			}
+		}
+		return _cells;
+	}
+
+	/**
+	 * By definition an unspecified run length is 1
+	 */
+	protected static int parseLength(final StringBuffer currCount) {
+		return currCount.length() == 0 ? 1 : Integer.parseInt(currCount.toString());
 	}
 }
