@@ -1,8 +1,11 @@
 package com.umnhoj.gol.types;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
 public class CellSet {
 	final Set<Cell> cells = new LinkedHashSet<>();
@@ -11,23 +14,26 @@ public class CellSet {
 		this.cells.addAll(cells);
 	}
 
-	public boolean contains(final int x, final int y) {
-		return this.cells.contains(new Cell(x, y));
+	public boolean contains(final Cell cell) {
+		return this.cells.contains(cell);
 	}
 
 	public int countNeighbors(final Cell cell) {
-		return this.countNeighbors(cell.getX(), cell.getY());
+		return CellSet.mapNeighbors(cell, c -> {
+			if (!(c.equals(cell)) && this.contains(c)) {
+				return 1;
+			}
+			return 0;
+		}).stream().reduce(Integer::sum).orElse(0);
 	}
 
-	public int countNeighbors(final int x, final int y) {
-		int count = 0;
-		for (int i = x - 1; i <= x + 1; i++) {
-			for (int j = y - 1; j <= y + 1; j++) {
-				if (!(i == x && j == y) && this.contains(i, j)) {
-					count++;
-				}
+	public static <T> Collection<T> mapNeighbors(final Cell cell, final Function<Cell, T> func) {
+		final List<T> retVal = new ArrayList<>();
+		for (int i = cell.getX() - 1; i <= cell.getX() + 1; i++) {
+			for (int j = cell.getY() - 1; j <= cell.getY() + 1; j++) {
+				retVal.add(func.apply(new Cell(i, j)));
 			}
 		}
-		return count;
+		return retVal;
 	}
 }
