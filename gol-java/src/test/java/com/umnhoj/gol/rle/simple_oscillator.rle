@@ -1,0 +1,5 @@
+#N Simple Oscillator
+#O John C. Mu
+#C A well known pattern
+x = 4, y = 5, rule = B3/S23
+bo$1b1o$b1o!

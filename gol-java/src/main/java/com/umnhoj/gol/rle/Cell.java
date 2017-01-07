@@ -46,4 +46,9 @@ public class Cell {
 		}
 		return true;
 	}
+
+	@Override
+	public String toString() {
+		return "Cell [x=" + this.x + ", y=" + this.y + "]";
+	}
 }

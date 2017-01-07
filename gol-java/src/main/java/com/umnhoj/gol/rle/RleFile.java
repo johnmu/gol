@@ -1,11 +1,12 @@
 package com.umnhoj.gol.rle;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -79,15 +80,21 @@ public class RleFile {
 	}
 
 	public static RleFile parse(final Path path) throws IOException {
+		return RleFile.parse(Files.newInputStream(path));
+	}
+
+	public static RleFile parse(final InputStream inputStream) throws IOException {
 		// Sigh.. this may be improved
 		final MutableInt _height = new MutableInt();
 		final MutableInt _width = new MutableInt();
 		final StringBuffer rleLine = new StringBuffer();
-		try (Stream<String> lines = Files.lines(path, Charset.defaultCharset())) {
-			lines.map(String::trim).forEachOrdered(line -> {
+
+		String line;
+		try (final BufferedReader in = new BufferedReader(new InputStreamReader(inputStream))) {
+			while ((line = in.readLine()) != null) {
 				if (line.isEmpty()) {
 					// ignore blank lines
-					return;
+					continue;
 				}
 				final char start = Character.toLowerCase(line.charAt(0));
 				if (start == '#' && line.length() > 1) {
@@ -121,7 +128,7 @@ public class RleFile {
 				} else {
 					throw new RuntimeException("Bad line in RLE file: " + line);
 				}
-			});
+			}
 		}
 
 		return new RleFile(_width.toInteger(), _height.toInteger(), parseCells(rleLine));
@@ -144,6 +151,7 @@ public class RleFile {
 				currX += count;
 				currCount.setLength(0);
 			}
+				break;
 			case 'o': {
 				final int count = parseLength(currCount);
 				for (int i = 0; i < count; i++) {
@@ -152,10 +160,12 @@ public class RleFile {
 				}
 				currCount.setLength(0);
 			}
+				break;
 			case '$': {
 				currX = 0;
 				currY++;
 			}
+				break;
 			case '!':
 				break;
 			default:
