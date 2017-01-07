@@ -1,4 +1,4 @@
-package com.umnhoj.gol.rle;
+package com.umnhoj.gol.types;
 
 public class Cell {
 	protected final int x;

@@ -7,9 +7,12 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
+
+import com.umnhoj.gol.types.Cell;
 
 /**
  * Defined at http://conwaylife.com/wiki/Run_Length_Encoded
@@ -69,7 +72,7 @@ public class RleFile {
 		return this.height;
 	}
 
-	public ArrayList<Cell> getCells() {
+	public List<Cell> getCells() {
 		return this.cells;
 	}
 
