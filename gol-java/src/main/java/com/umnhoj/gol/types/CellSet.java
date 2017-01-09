@@ -45,7 +45,7 @@ public class CellSet {
 		return this.cells;
 	}
 
-	public Rectangle getRange() {
+	public Rectangle getBounds() {
 		if (this.cells.isEmpty()) {
 			return new Rectangle(0, 0, 0, 0);
 		}
@@ -66,12 +66,14 @@ public class CellSet {
 
 	@Override
 	public String toString() {
-		final StringBuilder retVal = new StringBuilder();
+		return this.toString(this.getBounds());
+	}
 
-		final Rectangle range = this.getRange();
-		for (int y = 0; y < range.height; y++) {
-			for (int x = 0; x < range.width; x++) {
-				if (this.contains(new Cell(range.x + x, range.y + y))) {
+	public String toString(final Rectangle bounds) {
+		final StringBuilder retVal = new StringBuilder();
+		for (int y = 0; y < bounds.height; y++) {
+			for (int x = 0; x < bounds.width; x++) {
+				if (this.contains(new Cell(bounds.x + x, bounds.y + y))) {
 					retVal.append("#");
 				} else {
 					retVal.append(".");
@@ -82,5 +84,4 @@ public class CellSet {
 
 		return retVal.toString();
 	}
-
 }

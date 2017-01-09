@@ -1,6 +1,8 @@
 package com.umnhoj.gol;
 
+import java.awt.Rectangle;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -12,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.umnhoj.gol.rle.RleFile;
-import com.umnhoj.gol.types.Cell;
 import com.umnhoj.gol.types.CellSet;
 
 public class GameOfLife implements Runnable {
@@ -99,5 +100,21 @@ public class GameOfLife implements Runnable {
 			System.exit(1);
 		}
 		return null;
+	}
+
+	public static Rectangle computeBounds(final List<CellSet> generations) {
+		final Rectangle retVal = new Rectangle(-1, -1);
+		for (final CellSet generation : generations) {
+			retVal.add(generation.getBounds());
+		}
+		return retVal;
+	}
+
+	public static void printGenerations(final PrintStream out, final List<CellSet> generations) {
+		final Rectangle bounds = computeBounds(generations);
+		for (int generation = 0; generation < generations.size(); generation++) {
+			out.format("Generations: %d\n", generation);
+			out.println(generations.get(generation).toString(bounds));
+		}
 	}
 }
