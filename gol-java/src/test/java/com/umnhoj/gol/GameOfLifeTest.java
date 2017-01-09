@@ -20,8 +20,7 @@ public class GameOfLifeTest extends GameOfLife {
 	@Test
 	public void testRunIterations() throws IOException {
 		final RleFile rleFile = RleFile.parse(GameOfLifeTest.class.getResourceAsStream("simple_oscillator.rle"));
-		final byte[] expected = IOUtils
-				.toByteArray(GameOfLifeTest.class.getResourceAsStream("simple_oscillator.out.txt"));
+		final byte[] expected = IOUtils.toByteArray(GameOfLifeTest.class.getResourceAsStream("simple_oscillator.out"));
 		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		GameOfLife.printGenerations(baos, this.runIterations(rleFile));
 		final byte[] actual = baos.toByteArray();
