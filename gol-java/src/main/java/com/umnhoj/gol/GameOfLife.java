@@ -2,6 +2,7 @@ package com.umnhoj.gol;
 
 import java.awt.Rectangle;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -19,9 +20,9 @@ import com.umnhoj.gol.types.CellSet;
 public class GameOfLife implements Runnable {
 	private static final Logger log = LoggerFactory.getLogger(GameOfLife.class);
 
-	protected final int numGenerations;
-	protected final Path inputGrid;
-	protected final Path outputGif;
+	protected int numGenerations;
+	protected Path inputGrid;
+	protected Path outputGif;
 
 	public static void main(final String[] args) {
 		if (args.length != 3) {
@@ -30,6 +31,10 @@ public class GameOfLife implements Runnable {
 		}
 
 		new GameOfLife(Integer.parseInt(args[0]), Paths.get(args[1]), Paths.get(args[2])).run();
+	}
+
+	public GameOfLife() {
+
 	}
 
 	public GameOfLife(final int numGenerations, final Path inputGrid, final Path outputGif) {
@@ -110,11 +115,12 @@ public class GameOfLife implements Runnable {
 		return retVal;
 	}
 
-	public static void printGenerations(final PrintStream out, final List<CellSet> generations) {
+	public static void printGenerations(final OutputStream out, final List<CellSet> generations) {
+		final PrintStream ps = new PrintStream(out);
 		final Rectangle bounds = computeBounds(generations);
 		for (int generation = 0; generation < generations.size(); generation++) {
-			out.format("Generations: %d\n", generation);
-			out.println(generations.get(generation).toString(bounds));
+			ps.format("\nGeneration: %d\n", generation);
+			ps.print(generations.get(generation).toString(bounds));
 		}
 	}
 }
