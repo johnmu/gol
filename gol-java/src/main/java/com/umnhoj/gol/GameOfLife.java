@@ -5,12 +5,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.umnhoj.gol.rle.RleFile;
 import com.umnhoj.gol.types.Cell;
+import com.umnhoj.gol.types.CellSet;
 
 public class GameOfLife implements Runnable {
 	private static final Logger log = LoggerFactory.getLogger(GameOfLife.class);
@@ -40,18 +43,31 @@ public class GameOfLife implements Runnable {
 		final RleFile rleFile = GameOfLife.parseRle(this.inputGrid);
 
 		// Run iterations
-		{
-			final List<Cell> cells = rleFile.getCells();
-			final List<? extends List<Cell>> cellGenerations = new ArrayList<>();
-			for (int generation = 0; generation < this.numGenerations; generation++) {
-				// final List<Cell> nextCells = new ArrayList<>
-			}
-		}
+		final List<CellSet> cellGenerations = this.runIterations(rleFile);
 
 		// Print output GIF
 	}
 
+	protected List<CellSet> runIterations(final RleFile rleFile) {
+		final List<CellSet> cellGenerations = new ArrayList<>();
+		cellGenerations.add(new CellSet(rleFile.getCells()));
+		for (int generation = 0; generation < this.numGenerations; generation++) {
+			final CellSet prevCellSet = cellGenerations.get(cellGenerations.size() - 1);
+			cellGenerations.add(new CellSet(prevCellSet.getCells().stream().flatMap(cell -> {
+				return CellSet.mapNeighbors(cell, cell2 -> {
+					if (applyB3S23Rule(prevCellSet.contains(cell2), prevCellSet.countNeighbors(cell2))) {
+						return cell2;
+					}
+					return null;
+				}).stream().filter(Objects::nonNull);
+			}).collect(Collectors.toList())));
+		}
+
+		return cellGenerations;
+	}
+
 	/**
+	 * TODO can be abstracted to some rules interface for alternative rules
 	 *
 	 * @param alive
 	 *            Is the current cell alive?
@@ -59,7 +75,7 @@ public class GameOfLife implements Runnable {
 	 *            How many neighbors are alive
 	 * @return Is the cell alive in the next generation?
 	 */
-	protected boolean applyB3S23Rule(final boolean alive, final int neighborsAlive) {
+	protected static boolean applyB3S23Rule(final boolean alive, final int neighborsAlive) {
 		if (alive) {
 			if (neighborsAlive < 2 || neighborsAlive > 3) {
 				return false;

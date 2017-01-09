@@ -9,6 +9,19 @@ import java.util.Set;
 import java.util.function.Function;
 
 public class CellSet {
+	public static <T> Collection<T> mapNeighbors(final Cell cell, final Function<Cell, T> func) {
+		final List<T> retVal = new ArrayList<>();
+		for (int i = cell.getX() - 1; i <= cell.getX() + 1; i++) {
+			for (int j = cell.getY() - 1; j <= cell.getY() + 1; j++) {
+				final Cell cell2 = new Cell(i, j);
+				if (!cell.equals(cell2)) {
+					retVal.add(func.apply(cell2));
+				}
+			}
+		}
+		return retVal;
+	}
+
 	final Set<Cell> cells = new LinkedHashSet<>();
 
 	public CellSet(final Collection<? extends Cell> cells) {
@@ -21,21 +34,15 @@ public class CellSet {
 
 	public int countNeighbors(final Cell cell) {
 		return CellSet.mapNeighbors(cell, c -> {
-			if (!(c.equals(cell)) && this.contains(c)) {
+			if (this.contains(c)) {
 				return 1;
 			}
 			return 0;
 		}).stream().reduce(Integer::sum).orElse(0);
 	}
 
-	public static <T> Collection<T> mapNeighbors(final Cell cell, final Function<Cell, T> func) {
-		final List<T> retVal = new ArrayList<>();
-		for (int i = cell.getX() - 1; i <= cell.getX() + 1; i++) {
-			for (int j = cell.getY() - 1; j <= cell.getY() + 1; j++) {
-				retVal.add(func.apply(new Cell(i, j)));
-			}
-		}
-		return retVal;
+	public Set<Cell> getCells() {
+		return this.cells;
 	}
 
 	public Rectangle getRange() {
