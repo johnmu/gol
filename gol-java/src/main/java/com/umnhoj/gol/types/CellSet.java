@@ -1,5 +1,6 @@
 package com.umnhoj.gol.types;
 
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -36,4 +37,43 @@ public class CellSet {
 		}
 		return retVal;
 	}
+
+	public Rectangle getRange() {
+		if (this.cells.isEmpty()) {
+			return new Rectangle(0, 0, 0, 0);
+		}
+
+		int minX = Integer.MAX_VALUE;
+		int minY = Integer.MAX_VALUE;
+		int maxX = Integer.MIN_VALUE;
+		int maxY = Integer.MIN_VALUE;
+
+		for (final Cell cell : this.cells) {
+			minX = Math.min(minX, cell.getX());
+			minY = Math.min(minY, cell.getY());
+			maxX = Math.max(maxX, cell.getX());
+			maxY = Math.max(maxY, cell.getY());
+		}
+		return new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
+	}
+
+	@Override
+	public String toString() {
+		final StringBuilder retVal = new StringBuilder();
+
+		final Rectangle range = this.getRange();
+		for (int y = 0; y < range.height; y++) {
+			for (int x = 0; x < range.width; x++) {
+				if (this.contains(new Cell(range.x + x, range.y + y))) {
+					retVal.append("#");
+				} else {
+					retVal.append(".");
+				}
+			}
+			retVal.append("\n");
+		}
+
+		return retVal.toString();
+	}
+
 }

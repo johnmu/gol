@@ -51,6 +51,30 @@ public class GameOfLife implements Runnable {
 		// Print output GIF
 	}
 
+	/**
+	 *
+	 * @param alive
+	 *            Is the current cell alive?
+	 * @param neighborsAlive
+	 *            How many neighbors are alive
+	 * @return Is the cell alive in the next generation?
+	 */
+	protected boolean applyB3S23Rule(final boolean alive, final int neighborsAlive) {
+		if (alive) {
+			if (neighborsAlive < 2 || neighborsAlive > 3) {
+				return false;
+			} else {
+				return true;
+			}
+		} else {
+			if (neighborsAlive == 3) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+	}
+
 	protected static RleFile parseRle(final Path input) {
 		try {
 			return RleFile.parse(input);
