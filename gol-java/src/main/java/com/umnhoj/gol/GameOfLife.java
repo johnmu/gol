@@ -73,7 +73,7 @@ public class GameOfLife implements Runnable {
 				graphics.setPaint(Color.WHITE);
 				graphics.fillRect(0, 0, bounds.width, bounds.height);
 				for (final Cell cell : generation.getCells()) {
-					image.setRGB(cell.getX(), cell.getY(), Color.BLACK.getRGB());
+					image.setRGB(cell.getX() - bounds.x, cell.getY() - bounds.y, Color.BLACK.getRGB());
 				}
 				images.add(image);
 				try {
