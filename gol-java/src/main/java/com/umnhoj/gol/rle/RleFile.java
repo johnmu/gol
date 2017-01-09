@@ -111,7 +111,7 @@ public class RleFile {
 					default:
 						// do nothing for now
 					}
-				} else if (Character.isDigit(start) || start == 'b' || start == 'o') {
+				} else if (Character.isDigit(start) || start == 'b' || start == 'o' || start == '$' || start == '!') {
 					rleLine.append(line);
 				} else if (start == 'x') {
 					final String[] tokens = StringUtils.split(line, ',');
@@ -148,15 +148,14 @@ public class RleFile {
 		int currX = 0;
 		final StringBuffer currCount = new StringBuffer();
 		for (char c : rleLine.toString().toCharArray()) {
+			final int count = parseLength(currCount);
 			switch (Character.toLowerCase(c)) {
 			case 'b': {
-				final int count = parseLength(currCount);
 				currX += count;
 				currCount.setLength(0);
 			}
 				break;
 			case 'o': {
-				final int count = parseLength(currCount);
 				for (int i = 0; i < count; i++) {
 					_cells.add(new Cell(currX, currY));
 					currX++;
@@ -166,7 +165,8 @@ public class RleFile {
 				break;
 			case '$': {
 				currX = 0;
-				currY++;
+				currY += count;
+				currCount.setLength(0);
 			}
 				break;
 			case '!':

@@ -20,4 +20,12 @@ public class RleFileTest {
 		assertEquals(Arrays.asList(new Cell(1, 0), new Cell(1, 1), new Cell(1, 2)), rleFile.getCells());
 	}
 
+	@Test
+	public void testParse2() throws IOException {
+		final RleFile rleFile = RleFile.parse(GameOfLifeTest.class.getResourceAsStream("simple_oscillator2.rle"));
+		assertEquals(4, rleFile.getWidth());
+		assertEquals(5, rleFile.getHeight());
+		assertEquals(Arrays.asList(new Cell(0, 1), new Cell(1, 1), new Cell(2, 1)), rleFile.getCells());
+	}
+
 }
