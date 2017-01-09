@@ -1,6 +1,9 @@
 package com.umnhoj.gol;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -11,10 +14,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import javax.imageio.ImageIO;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.umnhoj.gol.rle.RleFile;
+import com.umnhoj.gol.types.Cell;
 import com.umnhoj.gol.types.CellSet;
 
 public class GameOfLife implements Runnable {
@@ -49,9 +55,40 @@ public class GameOfLife implements Runnable {
 		final RleFile rleFile = GameOfLife.parseRle(this.inputGrid);
 
 		// Run iterations
-		final List<CellSet> cellGenerations = this.runIterations(rleFile);
+		long startTime = System.nanoTime();
+		final List<CellSet> generations = this.runIterations(rleFile);
+		long endTime = System.nanoTime();
 
 		// Print output GIF
+		{
+			// Determine bounds
+			final Rectangle bounds = computeBounds(generations);
+
+			final List<BufferedImage> images = new ArrayList<>();
+			int i = 0;
+			for (final CellSet generation : generations) {
+				// Create a BufferedImage for each generation
+				final BufferedImage image = new BufferedImage(bounds.width, bounds.height, BufferedImage.TYPE_INT_RGB);
+				final Graphics2D graphics = image.createGraphics();
+				graphics.setPaint(Color.WHITE);
+				graphics.fillRect(0, 0, bounds.width, bounds.height);
+				for (final Cell cell : generation.getCells()) {
+					image.setRGB(cell.getX(), cell.getY(), Color.BLACK.getRGB());
+				}
+				images.add(image);
+				try {
+					ImageIO.write(image, "gif", Paths.get(this.outputGif.toString() + i + ".gif").toFile());
+				} catch (IOException e) {
+					throw new RuntimeException("Error writing GIF file", e);
+				}
+				i++;
+			}
+
+			// Create a GIF with the buffered images
+
+		}
+
+		System.out.println((endTime - startTime) / 1000000.0 + " ms");
 	}
 
 	protected List<CellSet> runIterations(final RleFile rleFile) {
