@@ -80,66 +80,53 @@ public class GameOfLife implements Runnable {
 			// Determine bounds
 			final Rectangle bounds = computeBounds(generations);
 
-			// Create images
-			final List<BufferedImage> images = GameOfLife.createImages(generations, bounds, ZOOM);
-
 			// Create a GIF with the buffered images
 			// https://en.wikipedia.org/wiki/GIF
 			// http://giflib.sourceforge.net/whatsinagif/bits_and_bytes.html
-			{
-				final ImageWriter iw = ImageIO.getImageWritersByFormatName("gif").next();
-				final ImageWriteParam param = iw.getDefaultWriteParam();
-				final ImageTypeSpecifier typeSpecifier = ImageTypeSpecifier.createFromRenderedImage(images.get(0));
-				final IIOMetadata metadata = iw.getDefaultImageMetadata(typeSpecifier, param);
-
-				final String nativeMetadataFormatName = metadata.getNativeMetadataFormatName();
-
-				final IIOMetadataNode node = (IIOMetadataNode) metadata.getAsTree(nativeMetadataFormatName);
-				{
-					final IIOMetadataNode child = getOrCreateNode(node, GRAPHIC_CONTROL_EXTENSION);
-
-					// In hundredth of a second -_-"
-					child.setAttribute("delayTime", Integer.toString(2));
-				}
-				try {
-					metadata.setFromTree(nativeMetadataFormatName, node);
-				} catch (IIOInvalidTreeException e) {
-					throw new RuntimeException("Invalid GIF metadata", e);
-				}
-
-				final ImageOutputStream output;
-				try {
-					output = new FileImageOutputStream(this.outputGif.toFile());
-				} catch (FileNotFoundException e) {
-					throw new RuntimeException(e);
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
-
-				iw.setOutput(output);
-				try {
-					iw.prepareWriteSequence(null);
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
-
-				for (final BufferedImage image : images) {
-					try {
-						iw.writeToSequence(new IIOImage(image, null, metadata), param);
-					} catch (IOException e) {
-						throw new RuntimeException(e);
-					}
-				}
-
-				try {
-					output.close();
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
+			try {
+				this.createGif(generations, bounds);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
 			}
 		}
 
 		System.out.println((endTime - startTime) / 1000000.0 + " ms");
+	}
+
+	protected void createGif(final List<CellSet> generations, final Rectangle bounds)
+			throws FileNotFoundException, IOException {
+		{
+			final ImageWriter iw = ImageIO.getImageWritersByFormatName("gif").next();
+			final ImageWriteParam param = iw.getDefaultWriteParam();
+			final ImageTypeSpecifier typeSpecifier = ImageTypeSpecifier
+					.createFromRenderedImage(GameOfLife.createImage(generations.get(0), bounds, ZOOM));
+			final IIOMetadata metadata = iw.getDefaultImageMetadata(typeSpecifier, param);
+
+			final String nativeMetadataFormatName = metadata.getNativeMetadataFormatName();
+
+			final IIOMetadataNode node = (IIOMetadataNode) metadata.getAsTree(nativeMetadataFormatName);
+			{
+				final IIOMetadataNode child = getOrCreateNode(node, GRAPHIC_CONTROL_EXTENSION);
+
+				// In hundredth of a second -_-"
+				child.setAttribute("delayTime", Integer.toString(2));
+			}
+			try {
+				metadata.setFromTree(nativeMetadataFormatName, node);
+			} catch (IIOInvalidTreeException e) {
+				throw new RuntimeException("Invalid GIF metadata", e);
+			}
+
+			try (final ImageOutputStream output = new FileImageOutputStream(this.outputGif.toFile())) {
+				iw.setOutput(output);
+				iw.prepareWriteSequence(null);
+
+				for (final CellSet generation : generations) {
+					iw.writeToSequence(new IIOImage(GameOfLife.createImage(generation, bounds, ZOOM), null, metadata),
+							param);
+				}
+			}
+		}
 	}
 
 	/**
@@ -162,23 +149,17 @@ public class GameOfLife implements Runnable {
 		return retNode;
 	}
 
-	protected static List<BufferedImage> createImages(final List<CellSet> generations, final Rectangle bounds,
-			final int zoom) {
-		final List<BufferedImage> images = new ArrayList<>();
-		for (final CellSet generation : generations) {
-			// Create a BufferedImage for each generation
-			final BufferedImage image = new BufferedImage(bounds.width * zoom, bounds.height * zoom,
-					BufferedImage.TYPE_INT_RGB);
-			final Graphics2D graphics = image.createGraphics();
-			graphics.setPaint(Color.WHITE);
-			graphics.fillRect(0, 0, bounds.width * zoom, bounds.height * zoom);
-			graphics.setPaint(Color.BLACK);
-			for (final Cell cell : generation.getCells()) {
-				graphics.fillRect((cell.getX() - bounds.x) * zoom, (cell.getY() - bounds.y) * zoom, zoom, zoom);
-			}
-			images.add(image);
+	protected static BufferedImage createImage(final CellSet generation, final Rectangle bounds, final int zoom) {
+		final BufferedImage image = new BufferedImage(bounds.width * zoom, bounds.height * zoom,
+				BufferedImage.TYPE_INT_RGB);
+		final Graphics2D graphics = image.createGraphics();
+		graphics.setPaint(Color.WHITE);
+		graphics.fillRect(0, 0, bounds.width * zoom, bounds.height * zoom);
+		graphics.setPaint(Color.BLACK);
+		for (final Cell cell : generation.getCells()) {
+			graphics.fillRect((cell.getX() - bounds.x) * zoom, (cell.getY() - bounds.y) * zoom, zoom, zoom);
 		}
-		return images;
+		return image;
 	}
 
 	protected List<CellSet> runIterations(final RleFile rleFile) {
