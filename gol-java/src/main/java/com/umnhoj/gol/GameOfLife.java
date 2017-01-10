@@ -68,12 +68,16 @@ public class GameOfLife implements Runnable {
 	@Override
 	public void run() {
 		// Parse the RLE file
+		log.info("Starting loding file");
 		final RleFile rleFile = GameOfLife.parseRle(this.inputGrid);
+		log.info("Done loading file");
 
 		// Run iterations
+		log.info("Starting iterations");
 		long startTime = System.nanoTime();
 		final List<CellSet> generations = this.runIterations(rleFile);
 		long endTime = System.nanoTime();
+		log.info("Done iterations");
 
 		// Print output GIF
 		{
@@ -121,9 +125,12 @@ public class GameOfLife implements Runnable {
 				iw.setOutput(output);
 				iw.prepareWriteSequence(null);
 
+				int frame = 1;
 				for (final CellSet generation : generations) {
 					iw.writeToSequence(new IIOImage(GameOfLife.createImage(generation, bounds, ZOOM), null, metadata),
 							param);
+					log.info("Rendered frame {}", frame);
+					frame++;
 				}
 			}
 		}
@@ -167,7 +174,7 @@ public class GameOfLife implements Runnable {
 		cellGenerations.add(new CellSet(rleFile.getCells()));
 		for (int generation = 0; generation < this.numGenerations; generation++) {
 			final CellSet prevCellSet = cellGenerations.get(cellGenerations.size() - 1);
-			cellGenerations.add(new CellSet(prevCellSet.getCells().stream().flatMap(cell -> {
+			cellGenerations.add(new CellSet(prevCellSet.getCells().parallelStream().flatMap(cell -> {
 				return CellSet.mapNeighbors(cell, cell2 -> {
 					if (applyB3S23Rule(prevCellSet.contains(cell2), prevCellSet.countNeighbors(cell2))) {
 						return cell2;
