@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -14,17 +15,33 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageTypeSpecifier;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.metadata.IIOInvalidTreeException;
+import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.metadata.IIOMetadataNode;
+import javax.imageio.stream.FileImageOutputStream;
+import javax.imageio.stream.ImageOutputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.NodeList;
 
 import com.umnhoj.gol.rle.RleFile;
 import com.umnhoj.gol.types.Cell;
 import com.umnhoj.gol.types.CellSet;
 
 public class GameOfLife implements Runnable {
+	private static final String APPLICATION_EXTENSION = "ApplicationExtension";
+
+	private static final String GRAPHIC_CONTROL_EXTENSION = "GraphicControlExtension";
+
 	private static final Logger log = LoggerFactory.getLogger(GameOfLife.class);
+
+	public static final int ZOOM = 2;
 
 	protected int numGenerations;
 	protected Path inputGrid;
@@ -64,31 +81,116 @@ public class GameOfLife implements Runnable {
 			// Determine bounds
 			final Rectangle bounds = computeBounds(generations);
 
-			final List<BufferedImage> images = new ArrayList<>();
-			int i = 0;
-			for (final CellSet generation : generations) {
-				// Create a BufferedImage for each generation
-				final BufferedImage image = new BufferedImage(bounds.width, bounds.height, BufferedImage.TYPE_INT_RGB);
-				final Graphics2D graphics = image.createGraphics();
-				graphics.setPaint(Color.WHITE);
-				graphics.fillRect(0, 0, bounds.width, bounds.height);
-				for (final Cell cell : generation.getCells()) {
-					image.setRGB(cell.getX() - bounds.x, cell.getY() - bounds.y, Color.BLACK.getRGB());
-				}
-				images.add(image);
-				try {
-					ImageIO.write(image, "gif", Paths.get(this.outputGif.toString() + i + ".gif").toFile());
-				} catch (IOException e) {
-					throw new RuntimeException("Error writing GIF file", e);
-				}
-				i++;
-			}
+			// Create images
+			final List<BufferedImage> images = GameOfLife.createImages(generations, bounds, ZOOM);
 
 			// Create a GIF with the buffered images
+			// https://en.wikipedia.org/wiki/GIF
+			// http://giflib.sourceforge.net/whatsinagif/bits_and_bytes.html
+			{
+				final ImageWriter iw = ImageIO.getImageWritersByFormatName("gif").next();
+				final ImageWriteParam param = iw.getDefaultWriteParam();
+				final ImageTypeSpecifier typeSpecifier = ImageTypeSpecifier.createFromRenderedImage(images.get(0));
+				final IIOMetadata metadata = iw.getDefaultImageMetadata(typeSpecifier, param);
 
+				final String nativeMetadataFormatName = metadata.getNativeMetadataFormatName();
+
+				final IIOMetadataNode node = (IIOMetadataNode) metadata.getAsTree(nativeMetadataFormatName);
+				{
+					final IIOMetadataNode child = getOrCreateNode(node, GRAPHIC_CONTROL_EXTENSION);
+
+					// In hundredth of a second -_-"
+					child.setAttribute("delayTime", Integer.toString(2));
+				}
+				// {
+				// final IIOMetadataNode child = getOrCreateNode(node,
+				// APPLICATION_EXTENSION);
+				// final IIOMetadataNode extension = new
+				// IIOMetadataNode("ApplicationExtension");
+				// extension.setAttribute("applicationID", "NETSCAPE");
+				// extension.setAttribute("authenticationCode", "2.0");
+				// extension.setUserObject(new byte[] { 0x1, (byte) (0xFF),
+				// (byte) (0xFF) });
+				// child.appendChild(extension);
+				// }
+				try {
+					metadata.setFromTree(nativeMetadataFormatName, node);
+				} catch (IIOInvalidTreeException e) {
+					throw new RuntimeException("Invalid GIF metadata", e);
+				}
+
+				final ImageOutputStream output;
+				try {
+					output = new FileImageOutputStream(this.outputGif.toFile());
+				} catch (FileNotFoundException e) {
+					throw new RuntimeException(e);
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+
+				iw.setOutput(output);
+				try {
+					iw.prepareWriteSequence(null);
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+
+				for (final BufferedImage image : images) {
+					try {
+						iw.writeToSequence(new IIOImage(image, null, metadata), param);
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+				}
+
+				try {
+					output.close();
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			}
 		}
 
 		System.out.println((endTime - startTime) / 1000000.0 + " ms");
+	}
+
+	/**
+	 *
+	 * @param node
+	 * @param name
+	 * @return null if the node is not unique
+	 */
+	protected static IIOMetadataNode getOrCreateNode(final IIOMetadataNode node, final String name) {
+		final NodeList nodeList = node.getElementsByTagName(name);
+		final IIOMetadataNode retNode;
+		if (nodeList.getLength() == 0) {
+			retNode = new IIOMetadataNode(name);
+			node.appendChild(retNode);
+		} else if (nodeList.getLength() == 1) {
+			retNode = (IIOMetadataNode) nodeList.item(0);
+		} else {
+			retNode = null;
+		}
+		return retNode;
+	}
+
+	protected static List<BufferedImage> createImages(final List<CellSet> generations, final Rectangle bounds,
+			final int zoom) {
+		final List<BufferedImage> images = new ArrayList<>();
+		for (final CellSet generation : generations) {
+			// Create a BufferedImage for each generation
+			final BufferedImage image = new BufferedImage(bounds.width * zoom, bounds.height * zoom,
+					BufferedImage.TYPE_INT_RGB);
+			final Graphics2D graphics = image.createGraphics();
+			graphics.setPaint(Color.WHITE);
+			graphics.fillRect(0, 0, bounds.width * zoom, bounds.height * zoom);
+			graphics.setPaint(Color.BLACK);
+			for (final Cell cell : generation.getCells()) {
+				graphics.fillRect((cell.getX() - bounds.x) * zoom, (cell.getY() - bounds.y) * zoom, zoom, zoom);
+			}
+			images.add(image);
+		}
+		return images;
 	}
 
 	protected List<CellSet> runIterations(final RleFile rleFile) {
