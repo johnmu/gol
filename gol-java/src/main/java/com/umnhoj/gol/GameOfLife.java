@@ -35,7 +35,6 @@ import com.umnhoj.gol.types.Cell;
 import com.umnhoj.gol.types.CellSet;
 
 public class GameOfLife implements Runnable {
-	private static final String APPLICATION_EXTENSION = "ApplicationExtension";
 
 	private static final String GRAPHIC_CONTROL_EXTENSION = "GraphicControlExtension";
 
@@ -102,17 +101,6 @@ public class GameOfLife implements Runnable {
 					// In hundredth of a second -_-"
 					child.setAttribute("delayTime", Integer.toString(2));
 				}
-				// {
-				// final IIOMetadataNode child = getOrCreateNode(node,
-				// APPLICATION_EXTENSION);
-				// final IIOMetadataNode extension = new
-				// IIOMetadataNode("ApplicationExtension");
-				// extension.setAttribute("applicationID", "NETSCAPE");
-				// extension.setAttribute("authenticationCode", "2.0");
-				// extension.setUserObject(new byte[] { 0x1, (byte) (0xFF),
-				// (byte) (0xFF) });
-				// child.appendChild(extension);
-				// }
 				try {
 					metadata.setFromTree(nativeMetadataFormatName, node);
 				} catch (IIOInvalidTreeException e) {
