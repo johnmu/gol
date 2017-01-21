@@ -4,14 +4,14 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"os"
 	"gol"
+	"os"
 	"strconv"
 	"strings"
 	"unicode"
 )
 
-func ParseLength(buffer bytes.Buffer) (int, error) {
+func parseLength(buffer bytes.Buffer) (int, error) {
 	if buffer.Len() == 0 {
 		return 1, nil
 	} else {
@@ -19,13 +19,13 @@ func ParseLength(buffer bytes.Buffer) (int, error) {
 	}
 }
 
-func ParseRleLine(rleLine bytes.Buffer) map[gol.Cell]bool {
+func parseRleLine(rleLine bytes.Buffer) map[gol.Cell]bool {
 	cells := make(map[gol.Cell]bool)
 	var currCount bytes.Buffer
 	currX, currY := 0, 0
 
 	for c, e := rleLine.ReadByte(); e == nil; c, e = rleLine.ReadByte() {
-		count, err := ParseLength(currCount)
+		count, err := parseLength(currCount)
 		if err != nil {
 			panic(fmt.Sprintf("Invalid count encountered: %v", currCount.String()))
 		}
@@ -58,7 +58,10 @@ func ParseRleLine(rleLine bytes.Buffer) map[gol.Cell]bool {
 	return cells
 }
 
-func ReadRleFile(inputGrid string) bytes.Buffer {
+/*
+ReadRleFile reads an RLE file as formatted for game of life (see http://conwaylife.com/wiki/Run_Length_Encoded)
+*/
+func ReadRleFile(inputGrid string) map[gol.Cell]bool {
 	var rleLine bytes.Buffer
 	rleFile, err := os.Open(inputGrid)
 	if err != nil {
@@ -83,5 +86,5 @@ func ReadRleFile(inputGrid string) bytes.Buffer {
 	if err := rleScanner.Err(); err != nil {
 		panic(err)
 	}
-	return rleLine
+	return parseRleLine(rleLine)
 }
