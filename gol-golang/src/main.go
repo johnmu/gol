@@ -3,12 +3,19 @@ package main
 import (
 	"fmt"
 	"gol"
+	"image"
+	"image/color"
+	"image/gif"
 	"log"
 	"os"
 	"rle"
 	"strconv"
 	"sync"
 	"time"
+
+	"math"
+
+	"github.com/golang/geo/r2"
 )
 
 func main() {
@@ -24,7 +31,7 @@ func main() {
 	}
 
 	inputGrid := args[1]
-	//outputGif := args[2]
+	outputGif := args[2]
 
 	// Parse the RLE file
 	cells := rle.ReadRleFile(inputGrid)
@@ -62,4 +69,42 @@ func main() {
 	//log.Println(generations)
 
 	// output the GIF
+	{
+		var frames []*image.Paletted
+		var delays []int
+
+		// Could be some numerical issues here with large grids
+		// TODO Should probably use image.Rectangle
+		var points []r2.Point
+		for _, generation := range generations {
+			for cell := range generation {
+				points = append(points, r2.Point{X: float64(cell.X), Y: float64(cell.Y)})
+			}
+		}
+
+		bounds := r2.RectFromPoints(points...)
+		var palette = []color.Color{
+			color.RGBA{0x00, 0x00, 0x00, 0xff},
+			color.RGBA{0xff, 0xff, 0xff, 0xff},
+		}
+
+		for _, generation := range generations {
+			img := image.NewPaletted(image.Rect(0, 0, int(math.Ceil(bounds.X.Length())), int(math.Ceil(bounds.Y.Length()))), palette)
+			frames = append(frames, img)
+			delays = append(delays, 10)
+			for cell := range generation {
+				img.Set(cell.X, cell.Y, palette[1])
+			}
+		}
+
+		f, err := os.OpenFile(outputGif, os.O_WRONLY|os.O_CREATE, 0666)
+		defer f.Close()
+		if err != nil {
+			panic(fmt.Sprintf("Cannot create file %v because of %v", outputGif, err))
+		}
+		gif.EncodeAll(f, &gif.GIF{
+			Image: frames,
+			Delay: delays,
+		})
+	}
 }
