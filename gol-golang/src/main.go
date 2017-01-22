@@ -7,6 +7,8 @@ import (
 	"os"
 	"rle"
 	"strconv"
+	"sync"
+	"time"
 )
 
 func main() {
@@ -29,20 +31,35 @@ func main() {
 	log.Println(cells)
 
 	// Run iterations
+	start := time.Now()
 	generations := make([]map[gol.Cell]bool, 0, numGenerations)
 	generations = append(generations, cells)
+
 	for i := 0; i < numGenerations; i++ {
 		nextGeneration := make(map[gol.Cell]bool)
 		currCells := generations[len(generations)-1]
+
+		var wg sync.WaitGroup
+		queue := make(chan []gol.Cell, len(currCells))
+		wg.Add(len(currCells))
 		for cell := range currCells {
-			liveCells := gol.ApplyAllNeighbors(currCells, cell)
+			go func(cell gol.Cell) {
+				defer wg.Done()
+				queue <- gol.ApplyAllNeighbors(currCells, cell)
+			}(cell) // This notation looks funny
+		}
+		wg.Wait()
+		close(queue)
+		for liveCells := range queue {
 			for _, liveCell := range liveCells {
 				nextGeneration[liveCell] = true
 			}
 		}
 		generations = append(generations, nextGeneration)
 	}
-	log.Println(generations)
+
+	log.Println(fmt.Sprintf("%s", time.Since(start)))
+	//log.Println(generations)
 
 	// output the GIF
 }
