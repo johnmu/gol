@@ -79,6 +79,8 @@ public class GameOfLife implements Runnable {
 		long endTime = System.nanoTime();
 		log.info("Done iterations");
 
+		System.out.println((endTime - startTime) / 1000000.0 + " ms");
+
 		// Print output GIF
 		{
 			// Determine bounds
@@ -93,8 +95,6 @@ public class GameOfLife implements Runnable {
 				throw new RuntimeException(e);
 			}
 		}
-
-		System.out.println((endTime - startTime) / 1000000.0 + " ms");
 	}
 
 	protected void createGif(final List<CellSet> generations, final Rectangle bounds)
