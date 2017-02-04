@@ -68,7 +68,7 @@ public class GameOfLife implements Runnable {
 	@Override
 	public void run() {
 		// Parse the RLE file
-		log.info("Starting loding file");
+		log.info("Starting loading file");
 		final RleFile rleFile = GameOfLife.parseRle(this.inputGrid);
 		log.info("Done loading file");
 
