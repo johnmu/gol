@@ -33,15 +33,19 @@ object Gol extends App with LazyLogging {
     }
   }
 
-  val neighborIndices = (for (x <- -1 to 1;y <- -1 to 1) yield (x,y))
-  def countNeighbors(currCell:Cell, cells:ParSet[Cell]):Int = neighborIndices.filter(_ != (0,0)).map(delta => cells.contains(currCell translate delta)).count(identity)
+  val neighborIndices = (for (x <- -1 to 1; y <- -1 to 1) yield (x, y)).toArray
+  val neighborIndicesWithoutSelf = neighborIndices.filter(_ != (0, 0))
+
+  def countNeighbors(currCell: Cell, cells: ParSet[Cell]): Int = neighborIndicesWithoutSelf.map(delta => cells.contains(currCell translate delta)).count(identity)
 
   val generator: Stream[ParSet[Cell]] = cells.par #:: generator.map(currCells => {
-    currCells.par.flatMap(cell => neighborIndices.map(delta => cell translate delta).filter(cell=> b3s23Rule(currCells contains cell, countNeighbors(cell, currCells))))
+    currCells.par.flatMap(cell => neighborIndices.map(delta => cell translate delta).filter(cell => b3s23Rule(currCells contains cell, countNeighbors(cell, currCells))))
   })
 
+  val startTime = System.nanoTime()
   val generations = generator.take(numGenerations).toList
-  println(generations)
+  val endTime = System.nanoTime()
+  println((endTime - startTime) / 1000000.0 + " ms")
 
   logger.info("Done iterations")
 
