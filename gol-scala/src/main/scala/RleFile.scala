@@ -12,13 +12,13 @@ import scala.util.control.Breaks._
 case class RleFile(path: Path) {
   private val rleLine = Source.fromFile(path.toFile)
     .getLines()
-    .map(s => s.trim)
-    .filterNot(s => s.isEmpty)
+    .map(_.trim)
+    .filterNot(_.isEmpty)
     .filter(s => {
       val first = Character.toLowerCase(s.charAt(0))
       Character.isDigit(first) || first == 'b' || first == 'o' || first == '$' || first == '!'
     })
-    .reduce((s1, s2) => s1 + s2)
+    .reduce(_ + _)
 
   def parseLength = (s: String) => if (s.isEmpty) 1 else s.toInt
 
