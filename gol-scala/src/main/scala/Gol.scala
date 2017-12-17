@@ -55,12 +55,12 @@ object Gol extends App with LazyLogging {
   logger.info("Start output")
 
   def findBounds[U <: Cell](cells: Seq[U]): Rectangle = cells.foldLeft(new Rectangle())((rect, cell) => {
-    rect.add(cell.x, cell.y);
+    rect.add(cell.x, cell.y)
     rect
   })
 
   val bounds = generations.foldLeft(new Rectangle())((rect, cells) => {
-    rect.add(findBounds(cells.toArray.toSeq));
+    rect.add(findBounds(cells.toArray.toSeq))
     rect
   })
 
